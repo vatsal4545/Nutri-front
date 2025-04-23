@@ -1,0 +1,45 @@
+{
+  "name": "barcode_scanner",
+  "version": "1.0.0",
+  "main": "expo/AppEntry.js",
+  "scripts": {
+    "start-tunnel": "node start-tunnel.js",
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@firebase/auth": "^1.10.0",
+    "@react-native-community/cli-server-api": "^16.0.0",
+    "@react-native-community/netinfo": "^11.4.1",
+    "@react-native-firebase/app": "^21.14.0",
+    "@react-native-firebase/auth": "^21.14.0",
+    "dotenv": "^16.5.0",
+    "expo": "~52.0.0",
+    "expo-barcode-scanner": "^13.0.1",
+    "expo-camera": "~16.0.9",
+    "expo-dev-client": "~5.0.5",
+    "expo-image-picker": "^16.0.3",
+    "expo-status-bar": "~2.0.0",
+    "firebase": "^11.6.0",
+    "latest": "^0.2.0",
+    "localtunnel": "^2.0.2",
+    "react": "^18.3.1",
+    "react-native": "^0.76.3",
+    "react-native-camera": "^4.2.1",
+    "react-native-device-info": "^13.0.0",
+    "react-native-network-info": "^5.2.1",
+    "react-native-permissions": "^4.1.5",
+    "react-native-reanimated": "^3.16.3",
+    "react-native-screens": "~4.1.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@types/react": "~18.3.12",
+    "@types/react-native": "^0.72.8",
+    "concurrently": "^9.0.1",
+    "typescript": "^5.3.3"
+  },
+  "private": true
+}
