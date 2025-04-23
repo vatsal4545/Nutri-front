@@ -17,30 +17,49 @@ interface FirebaseError {
 export const AuthScreen: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const { signUp, signIn } = useAuth();
 
   const handleAuth = async () => {
-    if (!email || !password) {
+    if (!email || !password || (isSignUp && !name)) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
     setIsLoading(true);
     try {
-      const result = isSignUp
-        ? await signUp(email, password)
-        : await signIn(email, password);
-
-      if (!result.success) {
-        Alert.alert("Error", result.message);
-      } else if (isSignUp) {
-        Alert.alert(
-          "Success",
-          "Account created successfully! Please verify your email before signing in.",
-          [{ text: "OK", onPress: () => setIsSignUp(false) }]
-        );
+      if (isSignUp) {
+        const result = await signUp(email, password, name);
+        if (result.success) {
+          Alert.alert(
+            "Success",
+            "Account created successfully! Please check your email for verification.",
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  setIsSignUp(false);
+                  setEmail("");
+                  setPassword("");
+                  setName("");
+                },
+              },
+            ]
+          );
+        } else {
+          Alert.alert("Error", result.message);
+        }
+      } else {
+        const result = await signIn(email, password);
+        if (result.success) {
+          // The AuthProvider will automatically handle showing App.tsx
+          // when the user state changes after successful sign in
+          return;
+        } else {
+          Alert.alert("Error", result.message);
+        }
       }
     } catch (error: unknown) {
       const firebaseError = error as FirebaseError;
@@ -56,6 +75,16 @@ export const AuthScreen: React.FC = () => {
       <Text style={styles.subtitle}>
         {isSignUp ? "Create an account" : "Sign in to your account"}
       </Text>
+
+      {isSignUp && (
+        <TextInput
+          style={styles.input}
+          placeholder="Full Name"
+          value={name}
+          onChangeText={setName}
+          autoCapitalize="words"
+        />
+      )}
 
       <TextInput
         style={styles.input}
@@ -90,7 +119,12 @@ export const AuthScreen: React.FC = () => {
 
       <TouchableOpacity
         style={styles.switchButton}
-        onPress={() => setIsSignUp(!isSignUp)}
+        onPress={() => {
+          setIsSignUp(!isSignUp);
+          setEmail("");
+          setPassword("");
+          setName("");
+        }}
       >
         <Text style={styles.switchText}>
           {isSignUp
