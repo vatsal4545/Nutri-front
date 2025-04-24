@@ -5,8 +5,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  Alert,
 } from "react-native";
 import { CameraView, CameraType } from "expo-camera";
+import { useAuth } from "../contexts/AuthContext";
+import { fetchWithRetry } from "../config";
 
 interface BarcodeScannerProps {
   facing: CameraType;
@@ -21,13 +24,73 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
   onBarCodeScanned,
   onFlipCamera,
 }) => {
+  const { user } = useAuth();
+
+  const handleBarCodeScanned = async (data: { type: string; data: string }) => {
+    try {
+      // First call the original handler
+      onBarCodeScanned(data);
+
+      if (!user) {
+        Alert.alert("Error", "Please log in to save scanned products");
+        return;
+      }
+
+      // Fetch product data from Open Food Facts API
+      const response = await fetch(
+        `https://world.openfoodfacts.org/api/v0/product/${data.data}.json`
+      );
+      const productData = await response.json();
+
+      if (productData.status === 1) {
+        const product = productData.product;
+
+        // Save product to our backend
+        const saveResponse = await fetchWithRetry("/api/products", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: user.uid,
+            barcode: data.data,
+            product_name: product.product_name,
+            brand: product.brands,
+            image_url: product.image_url,
+            nutrition_data: {
+              nutrients: product.nutriments,
+              grade: product.nutrition_grade_fr,
+              serving_size: product.serving_size,
+            },
+            ingredients: product.ingredients_text,
+          }),
+        });
+
+        if (!saveResponse) {
+          throw new Error("Failed to save product: No response from server");
+        }
+
+        const saveResult = await saveResponse.json();
+        if (!saveResult || !saveResult.success) {
+          throw new Error(saveResult?.message || "Failed to save product");
+        }
+      }
+    } catch (error) {
+      console.error("Error saving product:", error);
+      Alert.alert(
+        "Error",
+        "Failed to save product information. Please try again."
+      );
+    }
+  };
+
   return (
     <View style={styles.cameraContainer}>
       <CameraView
         style={styles.camera}
         facing={facing}
         enableTorch={false}
-        onBarcodeScanned={scanned ? undefined : onBarCodeScanned}
+        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
         barcodeScannerSettings={{
           barcodeTypes: [
             "ean13",

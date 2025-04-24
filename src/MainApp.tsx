@@ -13,13 +13,15 @@ import { useAuth } from "./contexts/AuthContext";
 import { fetchWithRetry } from "./config";
 import { BarcodeScanner } from "./components/BarcodeScanner";
 import { NutritionalInfo } from "./components/NutritionalInfo";
+import { ProductHistory } from "./components/ProductHistory";
 import {
   getHealthColor,
   getHealthDescription,
 } from "./components/NutritionalInfo/utils";
 
-const MainApp: React.FC = () => {
-  const { user, logOut } = useAuth();
+const ScanScreen: React.FC<{
+  onLogout: () => Promise<void>;
+}> = ({ onLogout }) => {
   const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -32,15 +34,6 @@ const MainApp: React.FC = () => {
   useEffect(() => {
     requestPermission();
   }, []);
-
-  const handleLogout = async () => {
-    try {
-      await logOut();
-      // The AuthProvider will automatically handle showing the AuthContainer
-    } catch (error) {
-      Alert.alert("Error", "Failed to log out. Please try again.");
-    }
-  };
 
   if (!permission) {
     return (
@@ -138,7 +131,7 @@ const MainApp: React.FC = () => {
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.logoText}>NutriScan</Text>
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
           <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>
       </View>
@@ -205,7 +198,79 @@ const MainApp: React.FC = () => {
   );
 };
 
+const MainApp: React.FC = () => {
+  const { logOut } = useAuth();
+  const [activeTab, setActiveTab] = useState<"scan" | "history">("scan");
+
+  const handleLogout = async () => {
+    try {
+      await logOut();
+    } catch (error) {
+      Alert.alert("Error", "Failed to log out. Please try again.");
+    }
+  };
+
+  return (
+    <View style={styles.mainContainer}>
+      <View style={styles.contentContainer}>
+        {activeTab === "scan" ? (
+          <ScanScreen onLogout={handleLogout} />
+        ) : (
+          <View style={styles.container}>
+            <View style={styles.headerContainer}>
+              <Text style={styles.logoText}>Product History</Text>
+              <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={handleLogout}
+              >
+                <Text style={styles.logoutButtonText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+            <ProductHistory />
+          </View>
+        )}
+      </View>
+
+      <View style={styles.tabBar}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "scan" && styles.activeTab]}
+          onPress={() => setActiveTab("scan")}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "scan" && styles.activeTabText,
+            ]}
+          >
+            Scan
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "history" && styles.activeTab]}
+          onPress={() => setActiveTab("history")}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "history" && styles.activeTabText,
+            ]}
+          >
+            History
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
+  mainContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  contentContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: "#fff",
@@ -254,48 +319,64 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     width: "100%",
-    marginBottom: 10,
+    marginBottom: 15,
   },
   mainText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
-    color: "#000",
-    textAlign: "center",
+    marginBottom: 5,
   },
   healthDescription: {
     fontSize: 14,
     color: "#666",
-    textAlign: "center",
-    marginTop: 8,
-    fontStyle: "italic",
   },
   statusText: {
     marginTop: 10,
-    fontSize: 16,
     color: "#666",
-    textAlign: "center",
   },
   errorText: {
     color: "red",
-    fontSize: 14,
     textAlign: "center",
-    marginTop: 10,
+    marginVertical: 10,
   },
   button: {
     backgroundColor: "tomato",
     padding: 15,
     borderRadius: 10,
+    marginTop: 10,
+  },
+  scanAgainButton: {
     marginTop: 20,
-    minWidth: 150,
-    alignItems: "center",
+    width: "100%",
   },
   buttonText: {
     color: "white",
-    fontWeight: "bold",
     fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
   },
-  scanAgainButton: {
-    backgroundColor: "tomato",
+  tabBar: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: "#e0e0e0",
+    backgroundColor: "#fff",
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  activeTab: {
+    borderTopWidth: 2,
+    borderTopColor: "tomato",
+  },
+  tabText: {
+    fontSize: 16,
+    color: "#666",
+  },
+  activeTabText: {
+    color: "tomato",
+    fontWeight: "bold",
   },
 });
 
