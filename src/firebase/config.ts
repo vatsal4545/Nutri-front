@@ -3,13 +3,13 @@ import { initializeAuth, browserLocalPersistence } from "firebase/auth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCPs6y-g25qz8ktTVslDYERR9CQFrN4c8Q",
-  authDomain: "nutriscan-authentication.firebaseapp.com",
-  projectId: "nutriscan-authentication",
-  storageBucket: "nutriscan-authentication.firebasestorage.app",
-  messagingSenderId: "662875109890",
-  appId: "1:662875109890:web:85d8165354b5c4ecb4851b",
-  measurementId: "G-M0R2G2T6WM",
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID,
+  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase
