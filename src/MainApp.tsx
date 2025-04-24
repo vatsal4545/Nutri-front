@@ -19,7 +19,7 @@ import {
 } from "./components/NutritionalInfo/utils";
 
 const MainApp: React.FC = () => {
-  const { user } = useAuth();
+  const { user, logOut } = useAuth();
   const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -32,6 +32,15 @@ const MainApp: React.FC = () => {
   useEffect(() => {
     requestPermission();
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await logOut();
+      // The AuthProvider will automatically handle showing the AuthContainer
+    } catch (error) {
+      Alert.alert("Error", "Failed to log out. Please try again.");
+    }
+  };
 
   if (!permission) {
     return (
@@ -127,7 +136,12 @@ const MainApp: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.logoText}>NutriScan</Text>
+      <View style={styles.headerContainer}>
+        <Text style={styles.logoText}>NutriScan</Text>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutButtonText}>Logout</Text>
+        </TouchableOpacity>
+      </View>
 
       <BarcodeScanner
         facing={facing}
@@ -197,12 +211,27 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     paddingTop: 50,
   },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
   logoText: {
     fontSize: 28,
     fontWeight: "bold",
     color: "tomato",
-    textAlign: "center",
-    marginBottom: 20,
+  },
+  logoutButton: {
+    padding: 8,
+    borderRadius: 5,
+    backgroundColor: "#f5f5f5",
+  },
+  logoutButtonText: {
+    color: "tomato",
+    fontSize: 14,
+    fontWeight: "bold",
   },
   message: {
     textAlign: "center",
