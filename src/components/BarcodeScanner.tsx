@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -25,9 +25,19 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
   onFlipCamera,
 }) => {
   const { user } = useAuth();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const lastScannedBarcode = useRef<string | null>(null);
 
   const handleBarCodeScanned = async (data: { type: string; data: string }) => {
+    // Prevent multiple scans of the same barcode
+    if (isProcessing || lastScannedBarcode.current === data.data) {
+      return;
+    }
+
     try {
+      setIsProcessing(true);
+      lastScannedBarcode.current = data.data;
+
       // First call the original handler
       onBarCodeScanned(data);
 
@@ -36,11 +46,22 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
         return;
       }
 
-      // Fetch product data from Open Food Facts API
-      const response = await fetch(
+      // Fetch product data from Open Food Facts API and get prediction
+      const productResponse = await fetch(
         `https://world.openfoodfacts.org/api/v0/product/${data.data}.json`
       );
-      const productData = await response.json();
+      const predictionResponse = await fetchWithRetry("/predict", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ barcode: data.data }),
+      });
+
+      const productData = await productResponse.json();
+      const predictionData = predictionResponse
+        ? await predictionResponse.json()
+        : { prediction: null };
 
       if (productData.status === 1) {
         const product = productData.product;
@@ -63,6 +84,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
               serving_size: product.serving_size,
             },
             ingredients: product.ingredients_text,
+            prediction: predictionData.prediction,
           }),
         });
 
@@ -81,6 +103,8 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
         "Error",
         "Failed to save product information. Please try again."
       );
+    } finally {
+      setIsProcessing(false);
     }
   };
 

@@ -26,6 +26,7 @@ interface Product {
     serving_size: string;
   };
   ingredients: string;
+  prediction: string | null;
   scanned_at: string;
 }
 
@@ -86,21 +87,24 @@ export const ProductHistory: React.FC = () => {
         <Text style={styles.sectionTitle}>Nutrition Information</Text>
         {nutrition_data.serving_size && (
           <Text style={styles.servingSize}>
-            Per {nutrition_data.serving_size}
+            Per {String(nutrition_data.serving_size)}
           </Text>
         )}
         {keyNutrients.map(
           ({ key, label }) =>
-            nutrients[key] && (
-              <Text key={key} style={styles.nutrientText}>
-                {label}: {nutrients[key]}
-                {key === "energy-kcal" ? " kcal" : "g"}
-              </Text>
+            nutrients[key] != null && (
+              <View key={key} style={styles.nutrientRow}>
+                <Text style={styles.nutrientLabel}>{label}:</Text>
+                <Text style={styles.nutrientValue}>
+                  {String(nutrients[key])}
+                  {key === "energy-kcal" ? " kcal" : "g"}
+                </Text>
+              </View>
             )
         )}
         {nutrition_data.grade && (
           <Text style={styles.nutritionGrade}>
-            Nutrition Grade: {nutrition_data.grade.toUpperCase()}
+            Nutrition Grade: {String(nutrition_data.grade).toUpperCase()}
           </Text>
         )}
       </View>
@@ -122,10 +126,15 @@ export const ProductHistory: React.FC = () => {
         )}
         <View style={styles.productInfo}>
           <Text style={styles.productName}>
-            {item.product_name || "Unknown Product"}
+            {String(item.product_name || "Unknown Product")}
           </Text>
-          {item.brand && <Text style={styles.brand}>{item.brand}</Text>}
-          <Text style={styles.barcode}>Barcode: {item.barcode}</Text>
+          {item.brand && <Text style={styles.brand}>{String(item.brand)}</Text>}
+          <Text style={styles.barcode}>Barcode: {String(item.barcode)}</Text>
+          {item.prediction && (
+            <Text style={styles.prediction}>
+              Classification: {String(item.prediction)}
+            </Text>
+          )}
           <Text style={styles.date}>
             Scanned: {new Date(item.scanned_at).toLocaleDateString()}
           </Text>
@@ -134,57 +143,70 @@ export const ProductHistory: React.FC = () => {
     </TouchableOpacity>
   );
 
-  const ProductDetailsModal = () => (
-    <Modal
-      visible={!!selectedProduct}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={() => setSelectedProduct(null)}
-    >
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <ScrollView>
-            {selectedProduct?.image_url && (
-              <Image
-                source={{ uri: selectedProduct.image_url }}
-                style={styles.modalImage}
-                resizeMode="contain"
-              />
-            )}
-            <View style={styles.modalInfo}>
-              <Text style={styles.modalTitle}>
-                {selectedProduct?.product_name || "Unknown Product"}
-              </Text>
-              {selectedProduct?.brand && (
-                <Text style={styles.modalBrand}>{selectedProduct.brand}</Text>
-              )}
-              <Text style={styles.modalBarcode}>
-                Barcode: {selectedProduct?.barcode}
-              </Text>
+  const ProductDetailsModal = () => {
+    if (!selectedProduct) return null;
 
-              {selectedProduct?.ingredients && (
-                <View style={styles.ingredientsContainer}>
-                  <Text style={styles.sectionTitle}>Ingredients</Text>
-                  <Text style={styles.ingredients}>
-                    {selectedProduct.ingredients}
+    return (
+      <Modal
+        visible={true}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setSelectedProduct(null)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+              {selectedProduct.image_url && (
+                <Image
+                  source={{ uri: selectedProduct.image_url }}
+                  style={styles.modalImage}
+                  resizeMode="contain"
+                />
+              )}
+              <View style={styles.modalInfo}>
+                <Text style={styles.modalTitle}>
+                  {String(selectedProduct.product_name || "Unknown Product")}
+                </Text>
+                {selectedProduct.brand && (
+                  <Text style={styles.modalBrand}>
+                    {String(selectedProduct.brand)}
                   </Text>
-                </View>
-              )}
+                )}
+                <Text style={styles.modalBarcode}>
+                  Barcode: {String(selectedProduct.barcode)}
+                </Text>
+                {selectedProduct.prediction && (
+                  <Text style={styles.modalPrediction}>
+                    Classification: {String(selectedProduct.prediction)}
+                  </Text>
+                )}
 
-              {selectedProduct?.nutrition_data &&
-                renderNutritionInfo(selectedProduct.nutrition_data)}
-            </View>
-          </ScrollView>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => setSelectedProduct(null)}
-          >
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
+                {selectedProduct.ingredients && (
+                  <View style={styles.ingredientsContainer}>
+                    <Text style={styles.sectionTitle}>Ingredients</Text>
+                    <View style={styles.ingredientsTextContainer}>
+                      <Text style={styles.ingredients}>
+                        {String(selectedProduct.ingredients)}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {selectedProduct.nutrition_data &&
+                  renderNutritionInfo(selectedProduct.nutrition_data)}
+              </View>
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setSelectedProduct(null)}
+            >
+              <Text style={styles.closeButtonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </Modal>
-  );
+      </Modal>
+    );
+  };
 
   if (loading) {
     return (
@@ -324,6 +346,12 @@ const styles = StyleSheet.create({
   ingredientsContainer: {
     marginBottom: 15,
   },
+  ingredientsTextContainer: {
+    backgroundColor: "#f8f8f8",
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 5,
+  },
   ingredients: {
     fontSize: 14,
     color: "#444",
@@ -338,10 +366,19 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontStyle: "italic",
   },
-  nutrientText: {
+  nutrientRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  nutrientLabel: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginRight: 8,
+  },
+  nutrientValue: {
     fontSize: 14,
     color: "#444",
-    marginBottom: 4,
   },
   nutritionGrade: {
     fontSize: 16,
@@ -360,5 +397,21 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
+  },
+  prediction: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 2,
+    fontStyle: "italic",
+  },
+  modalPrediction: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 15,
+    fontStyle: "italic",
   },
 });
