@@ -16,6 +16,7 @@ export const SignUpScreen: React.FC<{
 }> = ({ onToggleMode, onSignUpSuccess }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -31,8 +32,18 @@ export const SignUpScreen: React.FC<{
   }, [fadeAnim]);
 
   const handleSignUp = async () => {
-    if (!email || !password || !name) {
+    if (!email || !password || !name || !confirmPassword) {
       setError("Please fill in all fields");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long");
       return;
     }
 
@@ -100,6 +111,15 @@ export const SignUpScreen: React.FC<{
         onChangeText={setPassword}
         secureTextEntry
         autoComplete="password"
+        returnKeyType="next"
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Confirm Password"
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+        secureTextEntry
         returnKeyType="done"
         onSubmitEditing={handleSignUp}
       />
